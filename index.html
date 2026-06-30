@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Gestão de Lotes - SEMIT</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter", "sans-serif"] },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="bg-slate-100 min-h-screen p-4 md:p-8 text-slate-800 relative antialiased"
+  >
+    <div id="app" class="max-w-6xl mx-auto">
+      <header class="mb-10 flex flex-col items-center gap-2 text-center">
+        <div
+          class="inline-flex items-center justify-center p-3 bg-indigo-100 rounded-full mb-2"
+        >
+          <svg
+            class="w-8 h-8 text-indigo-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            ></path>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+          Gestão de Lotes
+        </h1>
+        <p class="text-slate-500 font-medium max-w-lg">
+          Módulo central para cadastro, consulta, edição e remoção do zoneamento
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div
+          class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit"
+        >
+          <h2
+            class="text-lg font-bold text-slate-800 mb-5 pb-3 border-b border-slate-100 flex items-center gap-2"
+          >
+            <span
+              class="w-2 h-2 rounded-full"
+              :class="editandoId ? 'bg-amber-400' : 'bg-indigo-500'"
+            ></span>
+            {{ editandoId ? 'Editando Lote #' + editandoId : `Cadastrar Novo
+            Lote` }}
+          </h2>
+
+          <form @submit.prevent="salvarOuAtualizar" class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1"
+                >Quadra *</label
+              >
+              <input
+                v-model="form.quadra"
+                type="text"
+                required
+                class="block w-full rounded-xl border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1"
+                >Identificação *</label
+              >
+              <input
+                v-model="form.lote"
+                type="text"
+                placeholder="Ex: Lote 05"
+                required
+                class="block w-full rounded-xl border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1"
+                >Número (Num) *</label
+              >
+              <input
+                v-model="form.lote_num"
+                type="number"
+                required
+                class="block w-full rounded-xl border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1"
+                >Status do Lote</label
+              >
+              <select
+                v-model="form.status_lote"
+                class="block w-full rounded-xl border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+              >
+                <option value="Disponível">Disponível</option>
+                <option value="Reservado">Reservado</option>
+                <option value="Vendido">Vendido</option>
+                <option value="Indisponível">Indisponível</option>
+              </select>
+            </div>
+
+            <div
+              v-if="mensagem"
+              :class="erro ? 'text-red-700 bg-red-50 border-red-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200'"
+              class="p-3 text-sm rounded-lg border font-medium text-center"
+            >
+              {{ mensagem }}
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button
+                type="submit"
+                :disabled="carregando"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ carregando ? 'Processando...' : (editandoId ? `Salvar
+                Alterações` : 'Confirmar Cadastro') }}
+              </button>
+              <button
+                v-if="editandoId"
+                type="button"
+                @click="cancelarEdicao"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div
+          class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
+        >
+          <div
+            class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"
+          >
+            <h2 class="text-lg font-bold text-slate-800">Registros Ativos</h2>
+            <button
+              @click="buscarLotes"
+              class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              ↻ Atualizar Lista
+            </button>
+          </div>
+
+          <div class="overflow-x-auto flex-1">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th
+                    class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    ID
+                  </th>
+                  <th
+                    class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    Lote / Localização
+                  </th>
+                  <th
+                    class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    Situação
+                  </th>
+                  <th
+                    class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-slate-100">
+                <tr v-if="lotes.length === 0">
+                  <td
+                    colspan="4"
+                    class="px-6 py-8 text-center text-slate-400 font-medium"
+                  >
+                    Nenhum registro encontrado no banco de dados.
+                  </td>
+                </tr>
+                <tr
+                  v-for="item in lotes"
+                  :key="item.id"
+                  class="hover:bg-slate-50 transition-colors"
+                >
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-400"
+                  >
+                    #{{ item.id }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-bold text-slate-900">
+                      {{ item.lote }}
+                    </div>
+                    <div class="text-xs font-medium text-slate-500 mt-0.5">
+                      Quadra {{ item.quadra }}
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="px-2.5 py-1 inline-flex text-xs font-bold rounded-md border"
+                      :class="{
+                        'bg-emerald-50 text-emerald-700 border-emerald-200': item.status_lote === 'Disponível',
+                        'bg-rose-50 text-rose-700 border-rose-200': item.status_lote === 'Vendido',
+                        'bg-amber-50 text-amber-700 border-amber-200': item.status_lote === 'Reservado',
+                        'bg-slate-100 text-slate-700 border-slate-200': item.status_lote === 'Indisponível' || !item.status_lote
+                      }"
+                    >
+                      {{ item.status_lote || 'N/A' }}
+                    </span>
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2"
+                  >
+                    <button
+                      @click="abrirDetalhes(item)"
+                      class="text-slate-500 hover:text-slate-900 transition-colors"
+                    >
+                      Detalhes
+                    </button>
+                    <span class="text-slate-300">|</span>
+                    <button
+                      @click="editarLote(item)"
+                      class="text-indigo-600 hover:text-indigo-900 transition-colors"
+                    >
+                      Editar
+                    </button>
+                    <span class="text-slate-300">|</span>
+                    <button
+                      @click="excluirLote(item.id)"
+                      class="text-rose-600 hover:text-rose-900 transition-colors"
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Modal de Detalhes do Lote -->
+      <div
+        v-if="loteDetalhe"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all"
+      >
+        <div
+          class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        >
+          <div
+            class="p-6 border-b border-slate-100 flex justify-between items-center bg-white"
+          >
+            <h3 class="text-xl font-bold text-slate-900">
+              Visão Geral do Registro
+              <span class="text-indigo-600">#{{ loteDetalhe.id }}</span>
+            </h3>
+            <button
+              @click="fecharDetalhes"
+              class="text-slate-400 hover:text-rose-500 text-3xl leading-none font-light transition-colors"
+            >
+              &times;
+            </button>
+          </div>
+
+          <div class="p-6 overflow-y-auto bg-slate-50/50">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              <div
+                v-for="(valor, chave) in loteDetalhe"
+                :key="chave"
+                class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm"
+              >
+                <span
+                  class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1"
+                  >{{ chave.replace(/_/g, ' ') }}</span
+                >
+                <span class="block text-sm font-semibold text-slate-800"
+                  >{{ valor || 'Não informado' }}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="p-5 border-t border-slate-100 bg-white flex justify-end">
+            <button
+              @click="fecharDetalhes"
+              class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors"
+            >
+              Fechar Visualização
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createApp, ref, onMounted } = Vue;
+
+      createApp({
+        setup() {
+          const lotes = ref([]);
+          const form = ref({
+            quadra: "",
+            lote: "",
+            lote_num: "",
+            status_lote: "Disponível",
+          });
+          const editandoId = ref(null);
+          const carregando = ref(false);
+          const mensagem = ref("");
+          const erro = ref(false);
+          const loteDetalhe = ref(null);
+
+          const buscarLotes = async () => {
+            try {
+              const response = await fetch("api/lote/read.php");
+              const data = await response.json();
+              lotes.value = data;
+            } catch (err) {
+              console.error("Erro ao buscar lotes:", err);
+            }
+          };
+
+          const limparFormulario = () => {
+            form.value = {
+              quadra: "",
+              lote: "",
+              lote_num: "",
+              status_lote: "Disponível",
+            };
+            editandoId.value = null;
+          };
+
+          const mostrarMensagem = (texto, isErro) => {
+            mensagem.value = texto;
+            erro.value = isErro;
+            setTimeout(() => {
+              mensagem.value = "";
+            }, 3000);
+          };
+
+          const salvarOuAtualizar = async () => {
+            carregando.value = true;
+            mensagem.value = "";
+            erro.value = false;
+            const endpoint = editandoId.value
+              ? "api/lote/update.php"
+              : "api/lote/create.php";
+            const payload = editandoId.value
+              ? { ...form.value, id: editandoId.value }
+              : form.value;
+
+            try {
+              const response = await fetch(endpoint, {
+                method: editandoId.value ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              const result = await response.json();
+              if (response.ok) {
+                mostrarMensagem(
+                  editandoId.value
+                    ? "Lote atualizado com sucesso!"
+                    : "Lote cadastrado com sucesso!",
+                  false,
+                );
+                limparFormulario();
+                buscarLotes();
+              } else {
+                mostrarMensagem(result.mensagem || "Erro ao salvar.", true);
+              }
+            } catch (err) {
+              mostrarMensagem("Erro de conexão com o servidor.", true);
+            } finally {
+              carregando.value = false;
+            }
+          };
+
+          const editarLote = (item) => {
+            form.value = {
+              quadra: item.quadra,
+              lote: item.lote,
+              lote_num: item.lote_num,
+              status_lote: item.status_lote || "Disponível",
+            };
+            editandoId.value = item.id;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+
+          const cancelarEdicao = () => {
+            limparFormulario();
+          };
+
+          const excluirLote = async (id) => {
+            if (!confirm("Tem certeza que deseja excluir este registro?"))
+              return;
+            try {
+              const response = await fetch("api/lote/delete.php", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id }),
+              });
+              const result = await response.json();
+              if (response.ok) {
+                mostrarMensagem("Registro removido com sucesso!", false);
+                if (editandoId.value === id) limparFormulario();
+                buscarLotes();
+              } else {
+                mostrarMensagem(result.mensagem || "Erro ao remover.", true);
+              }
+            } catch (err) {
+              mostrarMensagem("Erro de conexão com o servidor.", true);
+            }
+          };
+
+          const abrirDetalhes = (item) => {
+            loteDetalhe.value = item;
+          };
+          const fecharDetalhes = () => {
+            loteDetalhe.value = null;
+          };
+
+          onMounted(() => {
+            buscarLotes();
+          });
+
+          return {
+            lotes,
+            form,
+            editandoId,
+            carregando,
+            mensagem,
+            erro,
+            loteDetalhe,
+            buscarLotes,
+            salvarOuAtualizar,
+            editarLote,
+            cancelarEdicao,
+            excluirLote,
+            abrirDetalhes,
+            fecharDetalhes,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
