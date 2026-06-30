@@ -81,19 +81,29 @@ O script utiliza `utf8mb4`, garantindo compatibilidade com caracteres acentuados
 
 ---
 
-## Como Executar
+## Instalação e Execução
 
-### 1. Importe o banco de dados
+### 1. Obtenha o projeto
 
-Execute o arquivo:
+Clone o repositório ou faça o download do arquivo `.zip`.
+
+Caso utilize um servidor como Laragon, XAMPP ou WampServer, coloque a pasta do projeto no diretório público do servidor (por exemplo, `www` ou `htdocs`).
+
+---
+
+### 2. Importe o banco de dados
+
+Importe o arquivo:
 
 ```text
 database/setup_database.sql
 ```
 
+O script criará automaticamente o banco de dados `semit_lotes`, a tabela `lotes` e alguns registros de exemplo para facilitar os testes.
+
 ---
 
-### 2. Configure a conexão
+### 3. Configure a conexão
 
 Caso seja necessário alterar as credenciais do banco de dados, edite o arquivo:
 
@@ -110,16 +120,16 @@ private $password = "";
 
 ---
 
-### 3. Execute o projeto
+### 4. Execute a aplicação
 
 A aplicação pode ser executada utilizando qualquer servidor PHP compatível, como:
 
-- XAMPP
 - Laragon
+- XAMPP
 - WampServer
 - Servidor embutido do PHP
 
-Exemplo utilizando o servidor nativo:
+Caso utilize o servidor embutido do PHP, execute o comando na raiz do projeto:
 
 ```bash
 php -S localhost:8000
@@ -127,27 +137,33 @@ php -S localhost:8000
 
 ---
 
-### 4. Acesse a aplicação
+### 5. Acesse a aplicação
 
-Abra o navegador em:
+Se estiver utilizando Apache, acesse a URL correspondente ao diretório em que o projeto foi colocado.
+
+Exemplo:
+
+```text
+http://localhost/sistema-gestao-lotes-main/
+```
+
+Caso utilize o servidor embutido do PHP:
 
 ```text
 http://localhost:8000/
 ```
 
-ou no endereço correspondente ao servidor utilizado.
-
 ---
 
 ## Endpoints da API
 
-| Método | Endpoint                     | Descrição                   |
-| ------ | ---------------------------- | --------------------------- |
-| GET    | `/api/lote/read.php`         | Lista todos os lotes        |
-| GET    | `/api/lote/read.php?id={id}` | Consulta um lote específico |
-| POST   | `/api/lote/create.php`       | Cadastra um lote            |
-| PUT    | `/api/lote/update.php`       | Atualiza um lote            |
-| DELETE | `/api/lote/delete.php`       | Remove um lote              |
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/lote/read.php` | Lista todos os lotes |
+| GET | `/api/lote/read.php?id={id}` | Consulta um lote específico |
+| POST | `/api/lote/create.php` | Cadastra um lote |
+| PUT | `/api/lote/update.php` | Atualiza um lote |
+| DELETE | `/api/lote/delete.php` | Remove um lote |
 
 > **Observação:** a consulta por ID foi mantida como funcionalidade adicional da API, embora não fosse um requisito do escopo inicial.
 
@@ -156,5 +172,5 @@ ou no endereço correspondente ao servidor utilizado.
 ## Observações
 
 - O projeto foi desenvolvido priorizando simplicidade, organização e facilidade de execução.
-- Não utiliza dependências externas de build ou gerenciamento de pacotes, permitindo sua execução apenas com PHP e MySQL após a importação do banco de dados.
+- Não utiliza dependências de build ou gerenciamento de pacotes, permitindo sua execução apenas com PHP e MySQL após a importação do banco de dados.
 - O front-end consome a API utilizando `fetch`, realizando as operações de cadastro, consulta, atualização e remoção de registros.
